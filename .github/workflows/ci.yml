@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep this in step with the ruff pin in pyproject.toml's dev extra.
+  RUFF_VERSION: "0.16.10"
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ruff at the pinned version
+        run: python -m pip install "ruff==${RUFF_VERSION}"
+      - name: Show the ruff version actually in use
+        run: ruff --version
+      - name: ruff check
+        run: ruff check --output-format=full .
+      - name: ruff format
+        run: ruff format --check --diff .
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      # The official image's default config has "listener 1883" and
+      # "allow_anonymous true", so the service container needs no config mounted.
+      mosquitto:
+        image: eclipse-mosquitto:2.1.2-alpine
+        ports:
+          - 1883:1883
+    env:
+      MQTT_HOST: localhost
+      MQTT_PORT: "1883"
+      # Make a missing broker fail the run instead of skipping the integration tests.
+      REQUIRE_MQTT: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install the project and its test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Wait for the broker to accept connections
+        run: |
+          for attempt in $(seq 1 30); do
+            if python -c "import socket; socket.create_connection(('localhost', 1883), 2).close()"; then
+              echo "broker is up after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "broker never came up" >&2
+          exit 1
+      - name: pytest
+        run: python -m pytest -v
