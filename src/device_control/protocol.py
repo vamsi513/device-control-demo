@@ -85,9 +85,7 @@ class Command:
     params: dict[str, Any] = field(default_factory=dict)
 
     def encode(self) -> bytes:
-        return _dumps(
-            {"command_id": self.command_id, "action": self.action, "params": self.params}
-        )
+        return _dumps({"command_id": self.command_id, "action": self.action, "params": self.params})
 
     @classmethod
     def decode(cls, raw: bytes | str) -> Command:

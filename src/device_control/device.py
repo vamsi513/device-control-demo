@@ -8,14 +8,14 @@ from __future__ import annotations
 
 import threading
 from collections import OrderedDict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from .protocol import (
+    ACK_TOPIC,
     ACTION_ARM,
     ACTION_DISARM,
     ACTION_SET_MODE,
-    ACK_TOPIC,
     CMD_TOPIC,
     MODES,
     RESULT_APPLIED,
