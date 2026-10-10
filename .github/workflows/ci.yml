@@ -16,10 +16,12 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    # Pinned: the ubuntu-latest label migrates to Ubuntu 26 in October 2026, and a
+    # runner image changing under the build is not a surprise worth having.
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install ruff at the pinned version
@@ -32,7 +34,9 @@ jobs:
         run: ruff format --check --diff .
 
   test:
-    runs-on: ubuntu-latest
+    # Pinned: the ubuntu-latest label migrates to Ubuntu 26 in October 2026, and a
+    # runner image changing under the build is not a surprise worth having.
+    runs-on: ubuntu-24.04
     services:
       # The official image's default config has "listener 1883" and
       # "allow_anonymous true", so the service container needs no config mounted.
@@ -46,8 +50,8 @@ jobs:
       # Make a missing broker fail the run instead of skipping the integration tests.
       REQUIRE_MQTT: "1"
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install the project and its test dependencies

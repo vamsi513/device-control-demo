@@ -1,9 +1,22 @@
 services:
   mosquitto:
     image: eclipse-mosquitto:2.1.2-alpine
-    container_name: device-control-demo-broker
     ports:
       - "1883:1883"
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     restart: unless-stopped
+
+  demo:
+    build: .
+    depends_on:
+      - mosquitto
+    environment:
+      MQTT_HOST: mosquitto
+      MQTT_PORT: "1883"
+    # Not started by `up`. Run it on demand:
+    #   docker compose run --rm demo
+    profiles: ["demo"]
+    entrypoint: ["python", "/srv/scripts/demo.py"]
+    volumes:
+      - ./scripts:/srv/scripts:ro
